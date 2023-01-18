@@ -46,8 +46,9 @@ if '__main__' == __name__:
     doc_list = gen_doc_list(source_dir)
     print(doc_list)
 
-ppt_df = pd.DataFrame()
+ppt_df_total = pd.DataFrame()
 for ppt in doc_list:
+    ppt_df = pd.DataFrame()
     url_list = []
     page_n = []
     ppt_name = []
@@ -67,9 +68,11 @@ for ppt in doc_list:
                         url_list.append(address)
                         page_n.append(prs.slides.index(slide))
                         ppt_name.append(ppt)
-ppt_df['path'] = ppt_name
-ppt_df['page_n'] = page_n
-ppt_df['url'] = url_list
+    ppt_df['path'] = ppt_name
+    ppt_df['page_n'] = page_n
+    ppt_df['url'] = url_list
+    pd.concat([ppt_df,ppt_df_total])
+
 
 requests.packages.urllib3.disable_warnings()
 ppt_df = get_url_status(ppt_df)

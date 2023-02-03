@@ -2,7 +2,6 @@ import os
 import requests
 from pptx import Presentation
 import pandas as pd
-from paths import source_dir, target_dir_2
 
 
 def gen_doc_list(source) -> list:
@@ -37,41 +36,37 @@ def get_url_status(doc_url_df):
     return doc_url_df
 
 
-if '__main__' == __name__:
-
+def detect_url_ppt(input_folder_path, output_folder_path):
     # find doc and docx files
     requests.packages.urllib3.disable_warnings()
-    doc_list = gen_doc_list(source_dir)
-    print(doc_list)
+    doc_list = gen_doc_list(input_folder_path)
+    url_list = []
+    page_n = []
+    ppt_name = []
+    for ppt in doc_list:
+        ppt_df = pd.DataFrame()
+        """
+        The following just goes through each slide, picks out text frames, and try to run the hyperlink
+        associated with the texts. It outputs all the hyperlinks associated with texts. 
+        """
+        prs = Presentation(ppt)
+        for slide in prs.slides:
+            for shape in slide.shapes:
+                if not shape.has_text_frame:
+                    continue
+                for paragraph in shape.text_frame.paragraphs:
+                    for run in paragraph.runs:
+                        address = run.hyperlink.address
+                        if not address is None:
+                            url_list.append(address)
+                            page_n.append(prs.slides.index(slide))
+                            ppt_name.append(ppt)
+    ppt_df['path'] = ppt_name
+    ppt_df['page_n'] = page_n
+    ppt_df['url'] = url_list
 
-url_list = []
-page_n = []
-ppt_name = []
-for ppt in doc_list:
-    ppt_df = pd.DataFrame()
-    """
-    The following just goes through each slide, picks out text frames, and try to run the hyperlink
-    associated with the texts. It outputs all the hyperlinks associated with texts. 
-    """
-    prs = Presentation(ppt)
-    for slide in prs.slides:
-        for shape in slide.shapes:
-            if not shape.has_text_frame:
-                continue
-            for paragraph in shape.text_frame.paragraphs:
-                for run in paragraph.runs:
-                    address = run.hyperlink.address
-                    if not address is None:
-                        url_list.append(address)
-                        page_n.append(prs.slides.index(slide))
-                        ppt_name.append(ppt)
-ppt_df['path'] = ppt_name
-ppt_df['page_n'] = page_n
-ppt_df['url'] = url_list
-
-
-requests.packages.urllib3.disable_warnings()
-ppt_df = get_url_status(ppt_df)
-# Pick out only bad links (ones that don't have 200 as status code)
-ppt_urls = ppt_df.loc[ppt_df['status']!= 200]
-ppt_urls.to_csv(target_dir_2)
+    requests.packages.urllib3.disable_warnings()
+    ppt_df = get_url_status(ppt_df)
+    # Pick out only bad links (ones that don't have 200 as status code)
+    ppt_urls = ppt_df.loc[ppt_df['status'] != 200]
+    ppt_urls.to_csv(os.path.join(output_folder_path, "broken_links_ppt.csv"), index=False)

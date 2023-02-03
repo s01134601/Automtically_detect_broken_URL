@@ -1,4 +1,4 @@
 # Automtically_detect_broken_URL
 
 
-Automatically detects hyperlinks in .doc, .docx, .pdf, .ppt, .pptx linked to texts. 
+This is a Streamlit app that automatically detects hyperlinks in .doc, .docx, .pdf, .ppt, .pptx linked to texts. 
